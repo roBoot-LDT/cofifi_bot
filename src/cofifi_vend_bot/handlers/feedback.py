@@ -1,8 +1,8 @@
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from states import FeedbackState
-from aiogram import F
+from database import save_feedback
 
 router = Router()
 
@@ -12,11 +12,11 @@ async def feedback_start(message: Message, state: FSMContext):
     await state.set_state(FeedbackState.text)
 
 @router.message(FeedbackState.text)
-async def feedback_save(message: Message, state: FSMContext):
-    text = message.text
-
-    # TODO: сохранить в БД / Google Sheets
-    print(f"Комментарий от {message.from_user.id}: {text}")
-
+async def feedback_save_handler(message: Message, state: FSMContext):
+    await save_feedback(
+        user_id=message.from_user.id,
+        username=message.from_user.username or "",
+        text=message.text,
+    )
     await message.answer("Спасибо! Комментарий принят 🙌")
     await state.clear()
