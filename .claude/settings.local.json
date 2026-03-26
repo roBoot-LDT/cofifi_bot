@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /c/projects/cofifi_bot -type f ! -path */__pycache__/*)"
+      "Bash(find /c/projects/cofifi_bot -type f ! -path */__pycache__/*)",
+      "Bash(find C:projectscofifi_botsrccofifi_vend_bot -name *.py -type f)"
     ]
   }
 }

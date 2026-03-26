@@ -1,11 +1,11 @@
-import aiosqlite
+import sqlite3
 
 DB_PATH = "cofifi.db"
 
 
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS feedback (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
@@ -14,7 +14,7 @@ async def init_db():
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        await db.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS refunds (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
@@ -27,26 +27,26 @@ async def init_db():
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        await db.commit()
+        conn.commit()
 
 
-async def save_feedback(user_id: int, username: str, text: str):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
+def save_feedback(user_id: int, username: str, text: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
             "INSERT INTO feedback (user_id, username, text) VALUES (?, ?, ?)",
             (user_id, username, text),
         )
-        await db.commit()
+        conn.commit()
 
 
-async def save_refund(user_id: int, username: str, point: str,
-                      purchase_datetime: str, amount: str,
-                      reason: str, contact: str):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
+def save_refund(user_id: int, username: str, point: str,
+                purchase_datetime: str, amount: str,
+                reason: str, contact: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
             """INSERT INTO refunds
                (user_id, username, point, purchase_datetime, amount, reason, contact)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (user_id, username, point, purchase_datetime, amount, reason, contact),
         )
-        await db.commit()
+        conn.commit()

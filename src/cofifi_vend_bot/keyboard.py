@@ -1,9 +1,9 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from telegram import ReplyKeyboardMarkup
 
 main_menu = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💬 Оставить комментарий")],
-        [KeyboardButton(text="💸 Запросить возврат")]
+    [
+        ["💬 Оставить комментарий"],
+        ["💸 Запросить возврат"]
     ],
     resize_keyboard=True
 )

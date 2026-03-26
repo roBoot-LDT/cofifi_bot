@@ -1,55 +1,46 @@
-from aiogram import Router, F, Bot
-from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
-from states import RefundState
+from telegram import Update
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters
 from database import save_refund
 from config import OWNER_CHAT_ID
-
-router = Router()
-
-
-@router.message(F.text == "💸 Запросить возврат")
-async def refund_start(message: Message, state: FSMContext):
-    await message.answer("Укажите номер точки или автомата:")
-    await state.set_state(RefundState.point)
+from states import REFUND_POINT, REFUND_DATETIME, REFUND_AMOUNT, REFUND_REASON, REFUND_CONTACT
 
 
-@router.message(RefundState.point)
-async def refund_point(message: Message, state: FSMContext):
-    await state.update_data(point=message.text)
-    await message.answer("Дата и примерное время покупки:")
-    await state.set_state(RefundState.datetime)
+async def refund_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Укажите номер точки или автомата:")
+    return REFUND_POINT
 
 
-@router.message(RefundState.datetime)
-async def refund_datetime(message: Message, state: FSMContext):
-    await state.update_data(datetime=message.text)
-    await message.answer("Сумма покупки:")
-    await state.set_state(RefundState.amount)
+async def refund_point(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["point"] = update.message.text
+    await update.message.reply_text("Дата и примерное время покупки:")
+    return REFUND_DATETIME
 
 
-@router.message(RefundState.amount)
-async def refund_amount(message: Message, state: FSMContext):
-    await state.update_data(amount=message.text)
-    await message.answer("Причина возврата:")
-    await state.set_state(RefundState.reason)
+async def refund_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["datetime"] = update.message.text
+    await update.message.reply_text("Сумма покупки:")
+    return REFUND_AMOUNT
 
 
-@router.message(RefundState.reason)
-async def refund_reason(message: Message, state: FSMContext):
-    await state.update_data(reason=message.text)
-    await message.answer("Телефон или ник в Телеграме для связи:")
-    await state.set_state(RefundState.contact)
+async def refund_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["amount"] = update.message.text
+    await update.message.reply_text("Причина возврата:")
+    return REFUND_REASON
 
 
-@router.message(RefundState.contact)
-async def refund_finish(message: Message, state: FSMContext, bot: Bot):
-    data = await state.get_data()
-    contact = message.text
-    username = message.from_user.username or ""
+async def refund_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["reason"] = update.message.text
+    await update.message.reply_text("Телефон или ник в Телеграме для связи:")
+    return REFUND_CONTACT
 
-    await save_refund(
-        user_id=message.from_user.id,
+
+async def refund_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = context.user_data
+    contact = update.message.text
+    username = update.effective_user.username or ""
+
+    save_refund(
+        user_id=update.effective_user.id,
         username=username,
         point=data["point"],
         purchase_datetime=data["datetime"],
@@ -59,7 +50,7 @@ async def refund_finish(message: Message, state: FSMContext, bot: Bot):
     )
 
     if OWNER_CHAT_ID:
-        user_link = f"@{username}" if username else f"id{message.from_user.id}"
+        user_link = f"@{username}" if username else f"id{update.effective_user.id}"
         notify_text = (
             "🔔 <b>Новый запрос на возврат</b>\n\n"
             f"👤 Пользователь: {user_link}\n"
@@ -69,7 +60,20 @@ async def refund_finish(message: Message, state: FSMContext, bot: Bot):
             f"📝 Причина: {data['reason']}\n"
             f"📞 Контакт: {contact}"
         )
-        await bot.send_message(OWNER_CHAT_ID, notify_text, parse_mode="HTML")
+        await context.bot.send_message(OWNER_CHAT_ID, notify_text, parse_mode="HTML")
 
-    await message.answer("Запрос принят. Мы рассмотрим его в ближайшее время.")
-    await state.clear()
+    await update.message.reply_text("Запрос принят. Мы рассмотрим его в ближайшее время.")
+    return ConversationHandler.END
+
+
+conv_handler = ConversationHandler(
+    entry_points=[MessageHandler(filters.Regex("^💸 Запросить возврат$"), refund_start)],
+    states={
+        REFUND_POINT:    [MessageHandler(filters.TEXT & ~filters.COMMAND, refund_point)],
+        REFUND_DATETIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, refund_datetime)],
+        REFUND_AMOUNT:   [MessageHandler(filters.TEXT & ~filters.COMMAND, refund_amount)],
+        REFUND_REASON:   [MessageHandler(filters.TEXT & ~filters.COMMAND, refund_reason)],
+        REFUND_CONTACT:  [MessageHandler(filters.TEXT & ~filters.COMMAND, refund_finish)],
+    },
+    fallbacks=[],
+)

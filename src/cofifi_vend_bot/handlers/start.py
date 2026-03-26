@@ -1,14 +1,10 @@
-from aiogram import Router
-from aiogram.types import Message
-from aiogram.filters import Command
+from telegram import Update
+from telegram.ext import ContextTypes
 from keyboard import main_menu
 
-router = Router()
 
-@router.message(Command("start"))
-async def start_handler(message: Message):
-    await message.answer(
-        "Привет! Я помощник сервиса кофе-корнеров.\n"
-        "Чем могу помочь?",
+async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Привет! Я помощник сервиса кофе-корнеров.\nЧем могу помочь?",
         reply_markup=main_menu
     )

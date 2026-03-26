@@ -1,21 +1,23 @@
-import asyncio
-from aiogram import Bot, Dispatcher
+from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder, CommandHandler
 
-from config import BOT_TOKEN
+from config import TOKEN
 from database import init_db
 from handlers import start, feedback, refund
 
-async def main():
-    await init_db()
+load_dotenv()
 
-    bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher()
 
-    dp.include_router(start.router)
-    dp.include_router(feedback.router)
-    dp.include_router(refund.router)
+def main():
+    init_db()
+    app = ApplicationBuilder().token(TOKEN).build()
 
-    await dp.start_polling(bot)
+    app.add_handler(CommandHandler("start", start.start_handler))
+    app.add_handler(feedback.conv_handler)
+    app.add_handler(refund.conv_handler)
+
+    app.run_polling()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

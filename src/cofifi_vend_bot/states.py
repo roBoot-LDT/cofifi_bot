@@ -1,11 +1,3 @@
-from aiogram.fsm.state import StatesGroup, State
+FEEDBACK_TEXT = 0
 
-class FeedbackState(StatesGroup):
-    text = State()
-
-class RefundState(StatesGroup):
-    point = State()
-    datetime = State()
-    amount = State()
-    reason = State()
-    contact = State()
+REFUND_POINT, REFUND_DATETIME, REFUND_AMOUNT, REFUND_REASON, REFUND_CONTACT = range(5)

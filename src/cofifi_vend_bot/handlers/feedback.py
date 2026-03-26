@@ -1,22 +1,28 @@
-from aiogram import Router, F
-from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
-from states import FeedbackState
+from telegram import Update
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters
 from database import save_feedback
+from states import FEEDBACK_TEXT
 
-router = Router()
 
-@router.message(F.text == "💬 Оставить комментарий")
-async def feedback_start(message: Message, state: FSMContext):
-    await message.answer("Напишите ваш комментарий или отзыв:")
-    await state.set_state(FeedbackState.text)
+async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Напишите ваш комментарий или отзыв:")
+    return FEEDBACK_TEXT
 
-@router.message(FeedbackState.text)
-async def feedback_save_handler(message: Message, state: FSMContext):
-    await save_feedback(
-        user_id=message.from_user.id,
-        username=message.from_user.username or "",
-        text=message.text,
+
+async def feedback_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    save_feedback(
+        user_id=update.effective_user.id,
+        username=update.effective_user.username or "",
+        text=update.message.text,
     )
-    await message.answer("Спасибо! Комментарий принят 🙌")
-    await state.clear()
+    await update.message.reply_text("Спасибо! Комментарий принят 🙌")
+    return ConversationHandler.END
+
+
+conv_handler = ConversationHandler(
+    entry_points=[MessageHandler(filters.Regex("^💬 Оставить комментарий$"), feedback_start)],
+    states={
+        FEEDBACK_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_save)],
+    },
+    fallbacks=[],
+)
