@@ -63,7 +63,7 @@ async def refund_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await context.bot.send_message(OWNER_CHAT_ID, notify_text, parse_mode="HTML")
 
-    await update.message.reply_text("Запрос принят. Мы рассмотрим его в ближайшее время.", reply_markup=main_menu)
+    await update.message.reply_text("Запрос принят. Мы рассмотрим его в ближайшее время. Спасибо!", reply_markup=main_menu)
     return ConversationHandler.END
 
 
