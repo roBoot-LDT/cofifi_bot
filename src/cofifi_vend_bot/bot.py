@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler
 

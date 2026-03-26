@@ -3,10 +3,11 @@ from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filt
 from database import save_refund
 from config import OWNER_CHAT_ID
 from states import REFUND_POINT, REFUND_DATETIME, REFUND_AMOUNT, REFUND_REASON, REFUND_CONTACT
+from keyboard import points_menu, contact_menu, main_menu
 
 
 async def refund_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Укажите номер точки или автомата:")
+    await update.message.reply_text("Укажите номер точки или автомата:", reply_markup=points_menu)
     return REFUND_POINT
 
 
@@ -30,7 +31,7 @@ async def refund_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def refund_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["reason"] = update.message.text
-    await update.message.reply_text("Телефон или ник в Телеграме для связи:")
+    await update.message.reply_text("Телефон или ник в Телеграме для связи (опционально):", reply_markup=contact_menu)
     return REFUND_CONTACT
 
 
@@ -62,7 +63,7 @@ async def refund_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await context.bot.send_message(OWNER_CHAT_ID, notify_text, parse_mode="HTML")
 
-    await update.message.reply_text("Запрос принят. Мы рассмотрим его в ближайшее время.")
+    await update.message.reply_text("Запрос принят. Мы рассмотрим его в ближайшее время.", reply_markup=main_menu)
     return ConversationHandler.END
 
 
